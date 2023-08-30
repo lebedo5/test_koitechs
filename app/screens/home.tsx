@@ -3,31 +3,25 @@ import { View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { fontSize, height, size, width } from "../utils/size";
 import { Screen } from "../components/screen/screen";
 import { useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { fetchData } from "../store/dataFetch";
+import { useDispatch, useSelector } from "react-redux";
 
 export const HomeScreen = () => {
 	const [username, setUsername] = useState<string>("");
 	const [error, setError] = useState("");
 	const navigation = useNavigation()
-	const goToResumePage = async () => {
-		try {
-			const response = await fetch(
-				`https://api.github.com/users/${username}`,
-			);
-			const json = await response.json();
+	const dispatch = useDispatch();
+	const { data } = useSelector((state) => state?.data);
+	const goToResumePage = () => {
+		dispatch(fetchData(username));
 
-			if(json.name) {
-			  await AsyncStorage.setItem('userLogin', username)
-
-				navigation.navigate("ResumePage", { user: json })
-				setError("")
-				setUsername("")
-			} else {
-				setError('User not exist')
-				setTimeout(() => setError(""), 2000)
-			}
-		} catch (e) {
-			console.log("err", e)
+		if(data?.name) {
+			navigation.navigate("ResumePage", { login: data.login })
+			setError("")
+			setUsername("")
+		} else {
+			setError('User not exist')
+			setTimeout(() => setError(""), 2000)
 		}
 	}
 

@@ -1,62 +1,24 @@
-import React, { useCallback, useEffect, useState } from "react"
-import { Text, StyleSheet, View, Pressable, Linking, Alert } from "react-native"
+import React, { useEffect, useState } from "react"
+import { Text, StyleSheet, View, Pressable } from "react-native"
 import { Screen } from "../components/screen/screen"
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { size, width } from "../utils/size";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format } from "date-fns";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useGetUserQuery } from "../store/apiSlice";
+import { Link } from "../components/link/link";
+import { ResumeBlock } from "../components/resume-block/resume-block";
 
-interface ResumeBlockProps {
-	title: string
-	description: React.ReactNode
-}
-
-interface LinkProps {
-	children: React.ReactNode
-	url: string
-}
-
-const WIDTH_DESCRIPTION_BLOCK = width - size(140)
-
-const ResumeBlock = ({ title, description }: ResumeBlockProps) => {
-	return (
-		<>
-			<View style={styles.resumWrap}>
-				<Text style={styles.title}>{title}</Text>
-				<View style={styles.resumDescription}>
-					{description}
-				</View>
-			</View>
-			<View style={styles.designModel} />
-		</>
-	)
-}
-
-const Link = ({ children, url }: LinkProps) => {
-	const handlePress = useCallback(async () => {
-		const supported = await Linking.canOpenURL(url);
-
-		if (supported) {
-			await Linking.openURL(url);
-		} else {
-			Alert.alert(`Don't know how to open this URL: ${url}`);
-		}
-	}, [url]);
-
-	return (
-		<Pressable onPress={handlePress} hitSlop={10}>
-			{children}
-		</Pressable>
-	)
-}
+export const WIDTH_DESCRIPTION_BLOCK = width - size(140)
 
 export const ResumeScreen = () => {
 	const { top } = useSafeAreaInsets()
-	const { params: { user } } = useRoute()
+	const { params: { login } } = useRoute()
 	const [languages, setLanguages] = useState([])
 	const [repository, setRepos] = useState([])
 	const navigation = useNavigation()
+	const { data } = useGetUserQuery(login);
 	const calculatePercent = (val: number, reposLength: number) => {
 		return ((val * 100) / reposLength).toFixed(0)
 	}
@@ -90,20 +52,11 @@ export const ResumeScreen = () => {
 
 		setLanguages(finishResult)
 	}
-	const fetchRepository = async () => {
-		try {
-			const response = await fetch(user.repos_url);
-			const json = await response.json();
-			checkLastUpdateRepo(json)
-			checkLanguages(json)
-		} catch (e) {
-			console.log("error")
-		}
-	}
 
 	useEffect(() => {
-		fetchRepository()
-	}, [user.repos_url])
+		checkLastUpdateRepo(data)
+		checkLanguages(data)
+	}, [data?.repos_url])
 
 	const clearSession = async () => {
 		try {
@@ -123,10 +76,10 @@ export const ResumeScreen = () => {
 					<Text style={styles.headerTitleScreen}>Resume Screen</Text>
 				</View>
 				<View style={styles.wrap}>
-					<Text style={styles.username}>{user.name}</Text>
-					{user.bio && <Text style={styles.bio}>{user.bio}</Text>}
-					{user.created_at &&
-						<Text style={styles.member}>Member from: {format(new Date(user.created_at), "dd.MM.yyyy")}
+					<Text style={styles.username}>{data?.name}</Text>
+					{data?.bio && <Text style={styles.bio}>{data?.bio}</Text>}
+					{data?.created_at &&
+						<Text style={styles.member}>Member from: {format(new Date(data?.created_at), "dd.MM.yyyy")}
 						</Text>
 					}
 					<View style={styles.designModel} />
@@ -134,14 +87,15 @@ export const ResumeScreen = () => {
 						title={"GitHub Profile"}
 						description={
 						<View>
-							<Text style={styles.blockDescription}>{`On GitHub as an early adopter since 2007, ${user.name} is a developer with `}<Text style={styles.linkWithoutUrl}>{`${user.public_repos} public repositories `}</Text>
-								and <Text style={styles.linkWithoutUrl}>{`${user.followers} public repositories`}</Text>
+							<Text style={styles.blockDescription}>{`On GitHub as an early adopter since 2007, ${data?.name} is a developer with `}<Text style={styles.linkWithoutUrl}>
+								{`${data?.public_repos} public repositories `}</Text>
+								and <Text style={styles.linkWithoutUrl}>{`${data?.followers} public repositories`}</Text>
 							</Text>
 						</View>}
 					/>
 					<ResumeBlock
 						title={"Website"}
-						description={<Link children={<Text style={styles.link}>{user.blog}</Text>} url={user.blog}/>}
+						description={<Link children={<Text style={styles.link}>{data?.blog}</Text>} url={data?.blog}/>}
 					/>
 					<ResumeBlock
 						title={"Languages"}
@@ -180,13 +134,13 @@ export const ResumeScreen = () => {
 					/>
 					<ResumeBlock
 						title={"Organizations"}
-						description={<Link children={<Text style={styles.link}>{user.html_url}</Text>} url={user.html_url} />}
+						description={<Link children={<Text style={styles.link}>{data?.html_url}</Text>} url={data?.html_url} />}
 					/>
 					<ResumeBlock
 						title={"About This Résumé"}
 						description={<View>
 							<Text>This résumé is generated automatically using public information from the developer's GitHub account. The repositories are ordered by popularity based on a very simple popularity heuristic that defines the popularity of a repository by its sum of watchers and forks. Do not hesitate to visit
-								<Link children={<Text style={[styles.link, styles.separateText]}>{user.name} GitHub page </Text>} url={user.html_url} />
+								<Link children={<Text style={[styles.link, styles.separateText]}>{data?.name} GitHub page </Text>} url={data?.html_url} />
 								for a complete work history.
 							</Text>
 					</View>}
@@ -218,12 +172,6 @@ const styles = StyleSheet.create({
 		width: "100%",
 		backgroundColor: "grey",
 		marginVertical: size(15)
-	},
-	title: {
-		fontSize: size(18),
-		fontStyle: 'italic',
-		width: size(100),
-		marginRight: size(15)
 	},
 	link: {
 		color: "#a30a30",
@@ -273,8 +221,6 @@ const styles = StyleSheet.create({
 	backButtonBlock: { position: "absolute", left: size(16) },
 	separateText: { position: "relative", top: 2 },
 	langsBlock: { flexDirection: "row", width: WIDTH_DESCRIPTION_BLOCK / 2, paddingBottom: size(8) },
-	resumWrap: { flexDirection: "row",  width: width - size(32) },
-	resumDescription: { justifyContent: "flex-start", width: WIDTH_DESCRIPTION_BLOCK },
 	arrow: { fontSize: size(22) },
 	headerTitleScreen: { fontSize: size(16) }
 })
