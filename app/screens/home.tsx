@@ -15,14 +15,14 @@ export const HomeScreen = () => {
 	const goToResumePage = () => {
 		dispatch(fetchData(username));
 
-		// if(data?.name) {
+		if(data?.name) {
 			navigation.navigate("ResumePage", { login: "roland" })
 			setError("")
 			setUsername("")
-		// } else {
-		// 	setError('User not exist')
-		// 	setTimeout(() => setError(""), 2000)
-		// }
+		} else {
+			setError('User not exist')
+			setTimeout(() => setError(""), 2000)
+		}
 	}
 
 	return (
