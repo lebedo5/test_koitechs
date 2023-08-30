@@ -52,10 +52,19 @@ export const ResumeScreen = () => {
 
 		setLanguages(finishResult)
 	}
+	const fetchRepository = async () => {
+		try {
+			const response = await fetch(data.repos_url);
+			const json = await response.json();
+			checkLastUpdateRepo(json)
+			checkLanguages(json)
+		} catch (e) {
+			console.log("error")
+		}
+	}
 
 	useEffect(() => {
-		checkLastUpdateRepo(data)
-		checkLanguages(data)
+		fetchRepository()
 	}, [data?.repos_url])
 
 	const clearSession = async () => {

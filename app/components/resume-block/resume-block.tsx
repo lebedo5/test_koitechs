@@ -8,7 +8,7 @@ interface ResumeBlockProps {
 }
 export const ResumeBlock = ({ title, description }: ResumeBlockProps) => {
 	return (
-		<View>
+		<View style={styles.wrap}>
 			<View style={styles.resumWrap}>
 				<Text style={styles.title}>{title}</Text>
 				<View style={styles.resumDescription}>
@@ -22,6 +22,9 @@ export const ResumeBlock = ({ title, description }: ResumeBlockProps) => {
 
 const styles = StyleSheet.create({
 	resumWrap: { flexDirection: "row",  width: width - size(32) },
+	wrap: {
+		width: width - size(32)
+	},
 	title: {
 		fontSize: size(18),
 		fontStyle: 'italic',
